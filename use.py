@@ -16,8 +16,8 @@ def matrix_plot(matrix):
     
     plt.figure()
     plt.imshow(np.array(matrix).astype('float64'), alpha=0.8, cmap='YlGn_r')
-    plt.xlabel('Row')
-    plt.ylabel('Column')
+    plt.xlabel('Column')
+    plt.ylabel('Row')
     plt.title('Matrix')
     plt.colorbar()
     
@@ -49,3 +49,9 @@ def Jij(eij, tij):
     
     return 0.5*(eij + np.sqrt(8*(tij**2) + eij**2))
 
+def energy_diff_doublet_minus_3_bc(J12, J23, J31, Btilda):
+    
+    """Gives the energy splitting (for 3 spins, with bounday conditions) for the two states in the doublet subspace (minus) according
+    to the analytical formula."""
+    
+    return np.sqrt(J12**2 + J23**2 + J31**2 - J12*J23 - J12*J31 - J23*J31)

@@ -52,7 +52,7 @@ def CG(j1, j2, j, m1, m2, m): # Called in coupled_basis_matrix
     if m == m1+m2:
         T1 = ((2*j + 1)*A(j1, j2, j)*B(j1, j2, j, m1, m2, m))**0.5
         T2 = 0
-        for v in range(8): # This needs to be revised
+        for v in range(8): # 8 big enough
             if j1 + j2 - j - v >= 0 and j1 - m1 - v >= 0 and j2 + m2 - v >= 0 and j - j2 + m1 + v >= 0 and j - j1 - m2 + v >= 0:
                 T2 += (((-1)**v)*(C(j1, j2, j, m1, m2, v))**(-1))/np.math.factorial(v)
             else:
@@ -159,7 +159,7 @@ def coupled_matrix_gen(spins):
     # we add an extra column in front full of 0.5s
     labels = np.hstack((np.ones((2**spins,1))*(1/2), labels))
     j_second = 1/2
-    fourspinmat = np.zeros((2**spins, 2**spins), dtype = complex)
+    totalspinmat = np.zeros((2**spins, 2**spins), dtype = complex)
     
     for i in range(2**spins): # Vector index
         eigenvector = 0 # We reset the eigenvector
@@ -188,5 +188,14 @@ def coupled_matrix_gen(spins):
                 
             eigenvector += eigenvector_coef*np.array(basis(2**spins, j).trans())[0]
         
-        fourspinmat[i,:] = eigenvector
-    return fourspinmat
+        totalspinmat[i,:] = eigenvector
+    return totalspinmat
+
+
+
+'''
+Energies of the quintuplet subspace
+Energy differences of adjacent states of the quintuplet subspace
+Oscillations in the quintuplet subspace
+Fourier transform of the oscillations in the quintuplet subspace
+'''
