@@ -70,13 +70,13 @@ Tplus = basis(4,0)
 Tminus = basis(4,3)
 # -------------------------------------------------------------------------------------
 
-state = tensor(S, Tminus, Tminus)
+state = tensor(S, S, S)
 state_t = basis_transformation(state, trans_matrix).unit()
-print(state_t[32:37])
+print(state_t[0:5])
 
 # --------------------------------------------- FOR THE ENERGY PLOTS
 number_iterations = 100 # number of different values of J we test
-energy_tracker = np.zeros((number_iterations, 5)) # 5 (quintuplet) refers to the number of states in the subspace
+energy_tracker = np.zeros((number_iterations, 5)) # 5 (singlets) refers to the number of states in the subspace
 J34ini = 1.5
 J34fin = 0.5
 values_J34 = np.linspace(J34ini, J34fin, number_iterations)
@@ -91,9 +91,10 @@ J12zero = 2
 
 for J34 in values_J34:
     # We first want to create the arbitrary Hamiltonian and print the matrix
-    Jij_vector = np.array([1, J12zero - J34, 1, J34, 1])
+#    Jij_vector = np.array([1, J12zero - J34, 1, J34, 1])
 #    Jij_vector = np.array([J12zero - J34, 0.2, J34, 0.2, J12zero - J34])
 #    Jij_vector = np.array([J12zero - J34, 0.2, J34, 0, 0])
+    Jij_vector = np.array([1, 1, J34, 1, 1])
     spins = len(Jij_vector) + 1
     
     H = hheis_general(Jij_vector, spins, B)
@@ -110,7 +111,7 @@ for J34 in values_J34:
     
     # We have a subspace for 5 singlets, 9 triplets, 5 quintuplets and 1 septuplet
     # We take the first quintuplet and we get the energies of the states
-    H_q = H_coup[32:37, 32:37]
+    H_q = H_coup[0:5, 0:5]
     
     # --------------------------------------------- OSCILLATIONS
     # We transform this Hamiltonian into an H_channel (non time dependent)
@@ -122,7 +123,7 @@ for J34 in values_J34:
     calculation.add_channels(CH0)
     
     # Intitial state is the second state of the first triplet of the basis-transformation matrix, so we get its density matrix
-    ket0 = basis(5, 3)
+    ket0 = basis(5, 0) # State SSS
 #    ket0 = minus_0
     dm0 = ket0 * ket0.dag()
     dm0 = np.array(dm0)
@@ -155,13 +156,6 @@ for J34 in values_J34:
 
 # we plot the energy of the eigenstates
 plt.figure()
-"""
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='first q list (label 32)')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='second q list (label 33)')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='third q list (label 34)')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[3,:], label ='fourth q list (label 35)')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[4,:], label ='fifth q list (label 36)')
-"""
 plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='E1')
 plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='E2')
 plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='E3')
@@ -170,33 +164,25 @@ plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(
 plt.legend()
 plt.xlabel('$J_{23} - J_{45}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energies of the quintuplet subspace')
+plt.title('Energies of the singlet subspace')
 plt.show()
 
 # we plot the differences of succesive eigenstate's energies
-plt.figure()
-"""
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[1,:] - np.transpose(energy_tracker)[0,:], label ='second - first')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[2,:] - np.transpose(energy_tracker)[1,:], label ='third - second')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[3,:] - np.transpose(energy_tracker)[2,:], label ='fourht - third')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[4,:] - np.transpose(energy_tracker)[3,:], label ='fifth - fourth')
-"""
 plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[1,:] - np.transpose(energy_tracker)[0,:], label ='E2 - E1')
 plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[2,:] - np.transpose(energy_tracker)[1,:], label ='E3 - E2')
 plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[3,:] - np.transpose(energy_tracker)[2,:], label ='E4 - E3')
 plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[4,:] - np.transpose(energy_tracker)[3,:], label ='E5 - E4')
-
 plt.legend()
 plt.xlabel('$J_{23} - J_{45}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energy differences of adjacent states of the quintuplet subspace')
+plt.title('Energy differences of adjacent states of the singlet subspace')
 plt.show()
 
 # finally we colour plot the expect_tracker matrix data array and the amplitude_tracker for the fourier transform
 x = t
 y = np.linspace(J12zero-2*J34ini, J12zero-2*J34fin, number_iterations)
 plt.pcolormesh(x, y, expect_tracker)
-plt.title('Oscillations in the quintuplet subspace')
+plt.title('Oscillations in the singlet subspace')
 plt.xlabel('time ($t_0$)')
 plt.ylabel('$J_{23} - J_{45}$ ($E_0$)')
 plt.colorbar()
@@ -206,7 +192,7 @@ plt.show()
 x = sample_freq
 y = np.linspace(J12zero-2*J34ini, J12zero-2*J34fin, number_iterations)
 plt.pcolormesh(x[:100], y, amplitude_tracker[:,:100])
-plt.title('Fourier transform of the oscillations in the quintuplet subspace')
+plt.title('Fourier transform of the oscillations in the singlet subspace')
 plt.xlabel('frequency ($f_0$)')
 plt.ylabel('$J_{23} - J_{45}$ ($E_0$)')
 plt.colorbar()
@@ -217,7 +203,7 @@ plt.show()
 
 # --------------------------------------------- FOR THE ENERGY PLOTS
 number_iterations = 100 # number of different values of J we test
-energy_tracker_ = np.zeros((number_iterations, 5)) # 5 (quintuplet) refers to the number of states in the subspace
+energy_tracker_ = np.zeros((number_iterations, 5)) # 5 (singlets) refers to the number of states in the subspace
 J34ini = 1.5
 J34fin = 0.5
 values_J34 = np.linspace(J34ini, J34fin, number_iterations)
@@ -249,7 +235,7 @@ for J34 in values_J34:
 #    matrix_plot(H_coup)
     
     # We take the first triplet and we get the energies of the states
-    H_q = H_coup[32:37, 32:37]
+    H_q = H_coup[0:4, 0:4]
     
     # --------------------------------------------- OSCILLATIONS
     # We transform this Hamiltonian into an H_channel (non time dependent)
@@ -261,7 +247,7 @@ for J34 in values_J34:
     calculation.add_channels(CH0)
     
     # Intitial state is the second state of the first triplet of the basis-transformation matrix, so we get its density matrix
-    ket0 = basis(5, 3)
+    ket0 = basis(5, 0)
 #    ket0 = minus_0
     dm0 = ket0 * ket0.dag()
     dm0 = np.array(dm0)
@@ -304,11 +290,10 @@ plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tra
 plt.legend()
 plt.xlabel('$J_{34}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energy of the quintuplets')
+plt.title('Energy of the singlets')
 plt.show()
 
 # we plot the differences of succesive eigenstate's energies
-plt.figure()
 plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[1,:] - np.transpose(energy_tracker_)[0,:], label ='second - first')
 plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[2,:] - np.transpose(energy_tracker_)[1,:], label ='third - second')
 plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[3,:] - np.transpose(energy_tracker_)[2,:], label ='fourht - third')
@@ -316,14 +301,14 @@ plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tra
 plt.legend()
 plt.xlabel('$J_{34}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Differences of energy of the quintuplets')
+plt.title('Differences of energy of the singlet')
 plt.show()
 
 # finally we colour plot the expect_tracker matrix data array and the amplitude_tracker for the fourier transform
 x = t
 y = np.linspace(J34ini, J34fin, number_iterations)
 plt.pcolormesh(x, y, expect_tracker)
-plt.title('Oscillations for the quintuplet subspace')
+plt.title('Oscillations for the singlet subspace')
 plt.xlabel('time ($t_0$)')
 plt.ylabel('$J_{34}$ ($E_0$)')
 plt.colorbar()

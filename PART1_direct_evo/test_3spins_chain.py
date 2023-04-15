@@ -15,6 +15,7 @@ from basis_matrix import coupled_matrix_gen
 from qutip import *
 import numpy as np
 import matplotlib.pyplot as plt
+import matplotlib.patches as patches
 import scipy as sp
 
 # We first want to create the arbitrary Hamiltonian and print the matrix
@@ -27,7 +28,12 @@ H = hheis_general(Jij_vector, spins, B)
 H.check_herm()
 
 # We plot the matrix
-matrix_plot(H)
+plt.figure()
+plt.imshow(np.array(H).astype('float64'), alpha=0.8, cmap='YlGn_r')
+plt.xlabel('Column')
+plt.ylabel('Row')
+#plt.title('Matrix')
+plt.colorbar(label='energy ($E_0$)')
 
 # We first want to check if the Hamiltonian that our general function yeilds is the same as we expect
 # from a 3 spins Heisenberg Hamiltonian
@@ -51,7 +57,15 @@ is_unitary(trans_matrix)
 # We finally basis transform and plot again the Hamiltonian matrix
 H_coup = basis_transformation(H, trans_matrix)
 # And we plot it
-matrix_plot(H_coup)
+plt.figure()
+fig, ax = plt.subplots()
+im = ax.imshow(np.array(H_coup).astype('float64'), alpha=0.8, cmap='YlGn_r')
+fig.colorbar(im, label='energy ($E_0$)')
+rect = patches.Rectangle((-0.5, -0.5), 2, 2, edgecolor='k', facecolor='none')
+ax.add_patch(rect)
+plt.xlabel('Column')
+plt.ylabel('Row')
+#plt.title('Matrix')
 
 # We check again if the Hamiltonian is Hermitian
 H_coup.check_herm()
@@ -72,6 +86,16 @@ matrix_plot(np.diag(e_doub))
 # compute-plot them for different values of J
 # We also want to see the oscillationss of the input states for this subspace
 
+#Initial state
+S = (basis(4,1) - basis(4,2)).unit()
+T0 = (basis(4,1) + basis(4,2)).unit()
+Tplus = basis(4,0)
+Tminus = basis(4,3)
+
+minus_0 = tensor(S, basis(2,1))
+minus_0_t = basis_transformation(minus_0, trans_matrix)
+print(minus_0_t) #state basis(2,0)
+
 # --------------------------------------------- FOR THE ENERGY PLOTS
 number_iterations = 100 # number of different values of J we test
 energy_tracker = np.zeros((number_iterations, 2)) # 2 (doublet) refers to the number of states in the subspace
@@ -82,12 +106,16 @@ values_J23 = np.linspace(J23ini, J23fin, number_iterations)
 n = 0
 
 # --------------------------------------------- FOR THE OSCILLATIONS AND FOURIERS
-end_time = 5 # time of the oscillations (in natural units)
+end_time = 15 # time of the oscillations (in natural units)
 dimensions_expect_tracker = 1000 # number of time steps
 expect_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
 amplitude_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
 J12zero = 2 # tuning this value (and sweeping for long J12 range) you make sure J values cross at the exact value J12zero/2,
 # so the value of J in which we obtain homogeneous coupling can be chosen
+
+# We generate the basis-transformation matrix
+trans_matrix = coupled_matrix_gen(spins)
+    
 
 for J23 in values_J23:
     # We first want to create the arbitrary Hamiltonian and print the matrix
@@ -98,10 +126,7 @@ for J23 in values_J23:
     
     # We plot the matrix
 #    matrix_plot(H)
-    
-    # We generate the basis-transformation matrix
-    trans_matrix = coupled_matrix_gen(spins)
-    
+
     # We finally basis transform and plot again the Hamiltonian matrix
     H_coup = basis_transformation(H, trans_matrix)
 #    matrix_plot(H_coup)
@@ -150,21 +175,25 @@ for J23 in values_J23:
     energy_tracker[n,:] = ev
     n+=1
 
+n = 0
+
 # we plot the energy of the eigenstates
 #plt.figure(figsize=(6,5))
 plt.figure()
-plt.plot(J12zero-2*np.linspace(J23ini, J23fin, number_iterations), np.transpose(energy_tracker)[0,:], label='E1')
-plt.plot(J12zero-2*np.linspace(J23ini, J23fin, number_iterations), np.transpose(energy_tracker)[1,:], label='E2')
+plt.plot(J12zero-2*values_J23, energy_tracker[:,0], label='$E_1$')
+plt.plot(J12zero-2*values_J23, energy_tracker[:,1], label='$E_2$')
+plt.axvline(x=0, color='k', linestyle='dotted')
 plt.xlabel('$J_{12} - J_{23}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energies of the doublet subspace')
+#plt.title('Energies of the doublet subspace')
 plt.show()
 
 # finally we colour plot the expect_tracker matrix data array and the amplitude_tracker for the fourier transform
 x = t
-y = np.linspace(J12zero-2*J23ini, J12zero-2*J23fin, number_iterations)
+y = J12zero - 2*values_J23
 plt.pcolormesh(x, y, expect_tracker)
-plt.title('Oscillations in the doublet subspace')
+#plt.title('Oscillations in the doublet subspace')
+plt.axhline(y=0, color='k', linestyle = 'dotted')
 plt.xlabel('time ($t_0$)')
 plt.ylabel('$J_{12} - J_{23}$ ($E_0$)')
 plt.colorbar()
@@ -172,9 +201,10 @@ plt.show()
 
 # to plot the whole frequency spectrum (with negative ones)
 x = sample_freq
-y = np.linspace(J12zero-2*J23ini, J12zero-2*J23fin, number_iterations)
+y = J12zero - 2*values_J23
 plt.pcolormesh(x[:80], y, amplitude_tracker[:,:80])
-plt.title('Fourier transform of the oscillations in the doublet subspace')
+#plt.title('Fourier transform of the oscillations in the doublet subspace')
+plt.axhline(y=0, color='w', linestyle = 'dotted')
 plt.xlabel('frequency ($f_0$)')
 plt.ylabel('$J_{12} - J_{23}$ ($E_0$)')
 plt.colorbar()

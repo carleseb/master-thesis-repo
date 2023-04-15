@@ -59,14 +59,14 @@ Tplus = basis(4,0)
 Tminus = basis(4,3)
 
 # We propose 
-state = tensor(S, Tminus, Tminus, Tminus)
+state = tensor(S, S, Tminus, Tminus)
 state_t = basis_transformation(state, trans_matrix).unit()
-print(state_t) # all zeros except one 1 at position 200
-# this state belongs to the first setuplet [198:205] (205 not included)
+print(state_t) # all zeros except one 1 at position 100
+# this state belongs to the first quintuplet [98:103] (205 not included)
 
 # --------------------------------------------- FOR THE ENERGY PLOTS
 number_iterations = 50 # number of different values of J we test
-energy_tracker = np.zeros((number_iterations, 7)) # 7 (septuplet) refers to the number of states in the subspace
+energy_tracker = np.zeros((number_iterations, 5)) # 5 (quintuplet) refers to the number of states in the subspace
 J46ini = 1.5
 J46fin = 0.5
 values_J46 = np.linspace(J46ini, J46fin, number_iterations)
@@ -79,10 +79,20 @@ expect_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
 amplitude_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
 J35zero = 2
 
+# We generate the basis-transformation matrix
+trans_matrix = coupled_matrix_gen(spins)
+
 for J46 in values_J46:
+    print('Obtaining plots... %', n*100/number_iterations)
     # We first want to create the arbitrary Hamiltonian and print the matrix
+    #Jij_vector = np.array([1, 0, 1, 0, 1, 0, 1])
+    #Jij_ladder = np.array([1, 1, J35zero - J46, J46, 1, 1])
+    
     Jij_vector = np.array([1, 0, 1, 0, 1, 0, 1])
-    Jij_ladder = np.array([1, 1, J35zero - J46, J46, 1, 1])
+    Jij_ladder = np.array([1, 1, J46, 1, 1, 1])
+    
+    #Jij_vector = np.array([J35zero - J46, 0, J35zero - J46, 0, J46, 0, J46])
+    #Jij_ladder = np.array([J35zero - J46, J35zero - J46, 0.6, 0.45, J46, J46])
     spins = len(Jij_vector) + 1
     
     H = hheis_general(Jij_vector, spins, B) + ladder_exchanges(Jij_ladder, spins)
@@ -90,15 +100,13 @@ for J46 in values_J46:
     # We plot the matrix
 #    matrix_plot(H)
     
-    # We generate the basis-transformation matrix
-    trans_matrix = coupled_matrix_gen(spins)
-    
     # We finally basis transform and plot again the Hamiltonian matrix
     H_coup = basis_transformation(H, trans_matrix)
 #    matrix_plot(H_coup)
     
-    # We take the first septuplet and we get the energies of the states
-    H_q = H_coup[198:205, 198:205]
+    # We take the first quintuplet and we get the energies of the states
+    #H_q = H_coup[98:103, 98:103]
+    H_q = H_coup[103:108, 103:108]
     
     # --------------------------------------------- OSCILLATIONS
     # We transform this Hamiltonian into an H_channel (non time dependent)
@@ -110,7 +118,7 @@ for J46 in values_J46:
     calculation.add_channels(CH0)
     
     # Intitial state is the second state of the first triplet of the basis-transformation matrix, so we get its density matrix
-    ket0 = basis(7, 2)
+    ket0 = basis(5, 2)
 #    ket0 = minus_0
     dm0 = ket0 * ket0.dag()
     dm0 = np.array(dm0)
@@ -141,59 +149,38 @@ for J46 in values_J46:
     energy_tracker[n,:] = ev
     n+=1
 
+n = 0
+
 # we plot the energy of the eigenstates
 plt.figure()
-"""
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='first sept list (label 198)')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='second sept list (label 199)')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='third sept list (label 200)')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[3,:], label ='fourth sept list (label 201)')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[4,:], label ='fifth sept list (label 202)')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[5,:], label ='sixth sept list (label 203)')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[6,:], label ='seventh sept list (label 204)')
-"""
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='$E1$')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='$E2$')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='$E3$')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[3,:], label ='$E4$')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[4,:], label ='$E5$')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[5,:], label ='$E6$')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[6,:], label ='$E7$')
-
+plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='first sept list (label 98)')
+plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='second sept list (label 99)')
+plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='third sept list (label 100)')
+plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[3,:], label ='fourth sept list (label 101)')
+plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[4,:], label ='fifth sept list (label 102)')
 plt.legend()
 plt.xlabel('$J_{35} - J_{46}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energies of the septuplet subspace')
+plt.title('Energy of the septuplets')
 plt.show()
 
 # we plot the differences of succesive eigenstate's energies
 plt.figure()
-"""
 plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[1,:] - np.transpose(energy_tracker)[0,:], label ='second - first')
 plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[2,:] - np.transpose(energy_tracker)[1,:], label ='third - second')
 plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[3,:] - np.transpose(energy_tracker)[2,:], label ='fourth - third')
 plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[4,:] - np.transpose(energy_tracker)[3,:], label ='fifth - fourth')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[5,:] - np.transpose(energy_tracker)[4,:], label ='sixth - fifth')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[6,:] - np.transpose(energy_tracker)[5,:], label ='seventh - sixth')
-"""
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[1,:] - np.transpose(energy_tracker)[0,:], label ='E2 - E1')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[2,:] - np.transpose(energy_tracker)[1,:], label ='E3 - E2')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[3,:] - np.transpose(energy_tracker)[2,:], label ='E4 - E3')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[4,:] - np.transpose(energy_tracker)[3,:], label ='E5 - E4')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[5,:] - np.transpose(energy_tracker)[4,:], label ='E6 - E5')
-plt.plot(J35zero-2*np.linspace(J46ini, J46fin, number_iterations), np.transpose(energy_tracker)[6,:] - np.transpose(energy_tracker)[5,:], label ='E7 - E6')
-
 plt.legend()
 plt.xlabel('$J_{35} - J_{46}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energy differences of adjacent states of the septuplet subspace')
+plt.title('Differences of energy of the septuplets')
 plt.show()
 
 # finally we colour plot the expect_tracker matrix data array and the amplitude_tracker for the fourier transform
 x = t
 y = np.linspace(J35zero-2*J46ini, J35zero-2*J46fin, number_iterations)
 plt.pcolormesh(x, y, expect_tracker)
-plt.title('Oscillations in the septuplet subspace')
+plt.title('Oscillations for the quintuplet subspace')
 plt.xlabel('time ($t_0$)')
 plt.ylabel('$J_{35} - J_{46}$ ($E_0$)')
 plt.colorbar()
@@ -203,7 +190,7 @@ plt.show()
 x = sample_freq
 y = np.linspace(J35zero-2*J46ini, J35zero-2*J46fin, number_iterations)
 plt.pcolormesh(x[:50], y, amplitude_tracker[:,:50])
-plt.title('Fourier transfom of the oscillations in the septuplet subspace')
+plt.title('Fourier transfom of the oscillations')
 plt.xlabel('frequency ($f_0$)')
 plt.ylabel('$J_{23} - J_{45}$ ($E_0$)')
 plt.colorbar()

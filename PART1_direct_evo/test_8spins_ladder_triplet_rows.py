@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Created on Wed Oct 12 14:50:51 2022
+Created on Wed Nov 16 16:22:26 2022
 
 @author: ceboncompte
 """
 
 from DM_solver.solver  import H_channel, H_solver
 
-from hamiltonian import hheis_general, heisenberg_hamiltonian_4, is_unitary
+from hamiltonian import hheis_general, ladder_exchanges, is_unitary
 from use import matrix_plot, basis_transformation
 from basis_matrix import coupled_matrix_gen
 
@@ -18,30 +18,22 @@ import matplotlib.pyplot as plt
 import scipy as sp
 
 # We first want to create the arbitrary Hamiltonian and print the matrix
-Jij_vector = np.array([1, 1, 1])
+Jij_vector = np.array([1, 0, 1, 0, 1, 0, 1])
+Jij_ladder = np.array([1, 1, 1, 1, 1, 1])
 B = 0.5
 spins = len(Jij_vector) + 1
 
 # We check the Hamiltonian is Hermitian
-H = hheis_general(Jij_vector, spins, B)
+H = hheis_general(Jij_vector, spins, B) + ladder_exchanges(Jij_ladder, spins)
 H.check_herm()
 
 # We plot the matrix
 matrix_plot(H)
 
-# We first want to check if the Hamiltonian that our general function yeilds is the same as we expect
-# from a 3 spins Heisenberg Hamiltonian
-H4 = heisenberg_hamiltonian_4(1, 0.2, 1, B)
-H == H4
-# We see that for any combination of Js and B we get exactly the same matrix
-
 # We generate the basis-transformation matrix
 trans_matrix = coupled_matrix_gen(spins)
 matrix_plot(trans_matrix) # The basis states are rows
 print(trans_matrix[0,:]) # first basis state
-print(trans_matrix[3,:]) # basis state we evolve (1/root6, 2/root6 combinations)
-print(trans_matrix[2,:])
-print(trans_matrix[4,:]) 
 
 # We also want to check if the basis-transformation matrix is unitary
 ct_trans_matrix = np.transpose(np.conjugate(trans_matrix))
@@ -58,50 +50,42 @@ matrix_plot(H_coup)
 # We check again if the Hamiltonian is Hermitian
 H_coup.check_herm()
 
-# We want to see the energies of the eigenstates for this case, so we set a low magnetic field (also works with 0) and
-# compute-plot them for different values of J
-# We also want to see the oscillationss of the input states for this subspace
-# We compute the initial state (Tminus, S) in the computational basis and we basis-transform it
+# --------------------------------------------- LOOK 6 SPINS CHAIN SCRIPT FOR MORE
+
+# For the initial state we examine the pairs basis
 S = (basis(4,1) - basis(4,2)).unit()
 T0 = (basis(4,1) + basis(4,2)).unit()
 Tplus = basis(4,0)
 Tminus = basis(4,3)
 
-TM0 = tensor(S,Tminus)
-TM1 = tensor(Tminus,S)
-TM2 = (tensor(T0,Tminus) - tensor(Tminus,T0)).unit() 
-# We generate the basis-transformation matrix and we transform the states
-trans_matrix = coupled_matrix_gen(spins)
-TM0_t = basis_transformation(TM0, trans_matrix)
-TM1_t = basis_transformation(TM1, trans_matrix).unit()
-TM2_t = basis_transformation(TM2, trans_matrix).unit()
-sup = (TM1_t + TM2_t).unit()
-print(np.array(TM0_t), np.array(TM1_t), np.array(TM2_t))
-minus_0 = TM0_t.eliminate_states([0, 1, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15])
-print(np.array(minus_0))
+# We propose 
+state = tensor(S, S, S, Tminus)
+state_t = basis_transformation(state, trans_matrix).unit()
+print(state_t) # all zeros except one 1 at position 31
+# this state belongs to the sixth triplet [29:32] (32 not included)
 
 # --------------------------------------------- FOR THE ENERGY PLOTS
-number_iterations = 100 # number of different values of J we test
+number_iterations = 50 # number of different values of J we test
 energy_tracker = np.zeros((number_iterations, 3)) # 3 (triplet) refers to the number of states in the subspace
-J34ini = 1.5
-J34fin = 0.5
-values_J34 = np.linspace(J34ini, J34fin, number_iterations)
-#values_J34 = np.linspace(2, 0, number_iterations)
+J56ini = 1.5
+J56fin = 0.5
+values_J56 = np.linspace(J56ini, J56fin, number_iterations)
 n = 0
 
 # --------------------------------------------- FOR THE OSCILLATIONS AND FOURIERS
-end_time = 30 # time of the oscillations (in natural units)
-dimensions_expect_tracker = 1000 # number of time steps
+end_time = 100 # time of the oscillations (in natural units)
+dimensions_expect_tracker = 100 # number of time steps
 expect_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
 amplitude_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
 J12zero = 2
 
-for J34 in values_J34:
+for J56 in values_J56:
     # We first want to create the arbitrary Hamiltonian and print the matrix
-    Jij_vector = np.array([J12zero-J34, 0.6, J34])
+    Jij_vector = np.array([J12zero - J56, 0, 0.2, 0, J56, 0, 0.2])
+    Jij_ladder = np.array([1, 1, 1, 1, 1, 1])
     spins = len(Jij_vector) + 1
     
-    H = hheis_general(Jij_vector, spins, B)
+    H = hheis_general(Jij_vector, spins, B) + ladder_exchanges(Jij_ladder, spins)
     
     # We plot the matrix
 #    matrix_plot(H)
@@ -113,12 +97,12 @@ for J34 in values_J34:
     H_coup = basis_transformation(H, trans_matrix)
 #    matrix_plot(H_coup)
     
-    # We take the first triplet and we get the energies of the states
-    H_triplet = H_coup[2:5, 2:5]
+    # We take the first septuplet and we get the energies of the states
+    H_q = H_coup[29:32, 29:32]
     
     # --------------------------------------------- OSCILLATIONS
     # We transform this Hamiltonian into an H_channel (non time dependent)
-    CH0 = H_channel(H_triplet)
+    CH0 = H_channel(H_q)
     CH0.pulse.add_constant(2*np.pi*1.)
     
     # We solve the Schrodinger equation
@@ -126,8 +110,8 @@ for J34 in values_J34:
     calculation.add_channels(CH0)
     
     # Intitial state is the second state of the first triplet of the basis-transformation matrix, so we get its density matrix
-#    ket0 = basis(3, 1)
-    ket0 = minus_0
+    ket0 = basis(3, 2)
+#    ket0 = minus_0
     dm0 = ket0 * ket0.dag()
     dm0 = np.array(dm0)
     
@@ -153,71 +137,73 @@ for J34 in values_J34:
     amplitude_tracker[n,:] = amplitude # amplitude has length of dimensions_expect_tracker (1000)
     
     # We diagonalize and obtain energy values
-    ev = sp.linalg.eigvalsh(H_triplet)
+    ev = sp.linalg.eigvalsh(H_q)
     energy_tracker[n,:] = ev
     n+=1
 
 # we plot the energy of the eigenstates
 plt.figure()
-'''
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='first triplet list (label 2)')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='second triplet list (label 3)')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='third triplet list (label 4)')
-'''
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='E1')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='E2')
-plt.plot(J12zero-2*np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='E3')
+plt.plot(J12zero-2*np.linspace(J56ini, J56fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='first sept list (label 29)')
+plt.plot(J12zero-2*np.linspace(J56ini, J56fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='second sept list (label 30)')
+plt.plot(J12zero-2*np.linspace(J56ini, J56fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='third sept list (label 31)')
 plt.legend()
-plt.xlabel('$J_{12} - J_{34}$ ($E_0$)')
+plt.xlabel('$J_{12} - J_{56}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energies of the triplet subspace')
+plt.title('Energy of the triplet')
+plt.show()
+
+# we plot the differences of succesive eigenstate's energies
+plt.figure()
+plt.plot(J12zero-2*np.linspace(J56ini, J56fin, number_iterations), np.transpose(energy_tracker)[1,:] - np.transpose(energy_tracker)[0,:], label ='second - first')
+plt.plot(J12zero-2*np.linspace(J56ini, J56fin, number_iterations), np.transpose(energy_tracker)[2,:] - np.transpose(energy_tracker)[1,:], label ='third - second')
+plt.legend()
+plt.xlabel('$J_{12} - J_{56}$ ($E_0$)')
+plt.ylabel('energy ($E_0$)')
+plt.title('Differences of energy of the triplet')
 plt.show()
 
 # finally we colour plot the expect_tracker matrix data array and the amplitude_tracker for the fourier transform
 x = t
-y = np.linspace(J12zero-2*J34ini, J12zero-2*J34fin, number_iterations)
+y = np.linspace(J12zero-2*J56ini, J12zero-2*J56fin, number_iterations)
 plt.pcolormesh(x, y, expect_tracker)
-plt.title('Oscillations in the triplet subspace')
+plt.title('Oscillations for the quintuplet subspace')
 plt.xlabel('time ($t_0$)')
-plt.ylabel('$J_{12} - J_{34}$ ($E_0$)')
+plt.ylabel('$J_{12} - J_{56}$ ($E_0$)')
 plt.colorbar()
 plt.show()
 
 # to plot the whole frequency spectrum (with negative ones)
 x = sample_freq
-y = np.linspace(J12zero-2*J34ini, J12zero-2*J34fin, number_iterations)
-plt.pcolormesh(x[:80], y, amplitude_tracker[:,:80])
-plt.title('Fourier transform of the oscillations in the triplet subspace')
+y = np.linspace(J12zero-2*J56ini, J12zero-2*J56fin, number_iterations)
+plt.pcolormesh(x[:50], y, amplitude_tracker[:,:50])
+plt.title('Fourier transfom of the oscillations')
 plt.xlabel('frequency ($f_0$)')
-plt.ylabel('$J_{12} - J_{34}$ ($E_0$)')
+plt.ylabel('$J_{12} - J_{56}$ ($E_0$)')
 plt.colorbar()
 plt.show()
 
-# Now we take the value for which we observe minimum energy gap between bot triplets (and homogeneous exchange)
-# and we fix the J12 and J34 values, varying the J23 to obtain same value for all exchanges, we will see condition in energy
-
 # --------------------------------------------- FOR THE ENERGY PLOTS
-number_iterations = 100 # number of different values of J we test
-energy_tracker_ = np.zeros((number_iterations, 3)) # 3 (triplet) refers to the number of states in the subspace
-J23ini = 1.5
-J23fin = 0.5
-values_J23 = np.linspace(J23ini, J23fin, number_iterations)
-#values_J23 = np.linspace(2, 0, number_iterations)
+number_iterations = 50 # number of different values of J we test
+energy_tracker = np.zeros((number_iterations, 3)) # 3 (triplet) refers to the number of states in the subspace
+J78ini = 1.5
+J78fin = 0.5
+values_J78 = np.linspace(J78ini, J78fin, number_iterations)
 n = 0
 
 # --------------------------------------------- FOR THE OSCILLATIONS AND FOURIERS
-end_time = 30 # time of the oscillations (in natural units)
-dimensions_expect_tracker = 1000 # number of time steps
+end_time = 100 # time of the oscillations (in natural units)
+dimensions_expect_tracker = 100 # number of time steps
 expect_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
 amplitude_tracker = np.zeros((number_iterations, dimensions_expect_tracker))
+J34zero = 2
 
-for J23 in values_J23:
+for J78 in values_J78:
     # We first want to create the arbitrary Hamiltonian and print the matrix
-    Jij_vector = np.array([2-1, J23, 1])
-    B = 0
+    Jij_vector = np.array([1, 0, J34zero - J78, 0, 1, 0, J78])
+    Jij_ladder = np.array([1, 1, 1, 1, 1, 1])
     spins = len(Jij_vector) + 1
     
-    H = hheis_general(Jij_vector, spins, B)
+    H = hheis_general(Jij_vector, spins, B) + ladder_exchanges(Jij_ladder, spins)
     
     # We plot the matrix
 #    matrix_plot(H)
@@ -229,12 +215,12 @@ for J23 in values_J23:
     H_coup = basis_transformation(H, trans_matrix)
 #    matrix_plot(H_coup)
     
-    # We take the first triplet and we get the energies of the states
-    H_triplet = H_coup[2:5, 2:5]
+    # We take the first septuplet and we get the energies of the states
+    H_q = H_coup[29:32, 29:32]
     
     # --------------------------------------------- OSCILLATIONS
     # We transform this Hamiltonian into an H_channel (non time dependent)
-    CH0 = H_channel(H_triplet)
+    CH0 = H_channel(H_q)
     CH0.pulse.add_constant(2*np.pi*1.)
     
     # We solve the Schrodinger equation
@@ -242,8 +228,8 @@ for J23 in values_J23:
     calculation.add_channels(CH0)
     
     # Intitial state is the second state of the first triplet of the basis-transformation matrix, so we get its density matrix
-#    ket0 = basis(3, 1)
-    ket0 = minus_0
+    ket0 = basis(3, 2)
+#    ket0 = minus_0
     dm0 = ket0 * ket0.dag()
     dm0 = np.array(dm0)
     
@@ -264,47 +250,52 @@ for J23 in values_J23:
     amplitude = np.abs(sig_fft)
     power = amplitude**2
     angle = np.angle(sig_fft)
-    sample_freq = sp.fftpack.fftfreq(dm0_expect[0].size, d = time_step)
+    sample_freq = sp.fftpack.fftfreq(dm0_expect[0].size, d = time_step) # length dimensions_expect_tracker (1000)
     amplitude[0] = 0 # we set the zero frequency amplitude
-    amplitude_tracker[n,:] = amplitude
+    amplitude_tracker[n,:] = amplitude # amplitude has length of dimensions_expect_tracker (1000)
     
     # We diagonalize and obtain energy values
-    ev = sp.linalg.eigvalsh(H_triplet)
-    energy_tracker_[n,:] = ev
+    ev = sp.linalg.eigvalsh(H_q)
+    energy_tracker[n,:] = ev
     n+=1
 
 # we plot the energy of the eigenstates
 plt.figure()
-'''
-plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[0,:], label ='first triplet list (label 2)')
-plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[1,:], label ='second triplet list (label 3)')
-plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[2,:], label ='third triplet list (label 4)')
-'''
-plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[0,:], label ='E1')
-plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[1,:], label ='E2')
-plt.plot(np.linspace(J34ini, J34fin, number_iterations), np.transpose(energy_tracker_)[2,:], label ='E3')
+plt.plot(J34zero-2*np.linspace(J78ini, J78fin, number_iterations), np.transpose(energy_tracker)[0,:], label ='first sept list (label 29)')
+plt.plot(J34zero-2*np.linspace(J78ini, J78fin, number_iterations), np.transpose(energy_tracker)[1,:], label ='second sept list (label 30)')
+plt.plot(J34zero-2*np.linspace(J78ini, J78fin, number_iterations), np.transpose(energy_tracker)[2,:], label ='third sept list (label 31)')
 plt.legend()
-plt.xlabel('$J_{23}$ ($E_0$)')
+plt.xlabel('$J_{34} - J_{78}$ ($E_0$)')
 plt.ylabel('energy ($E_0$)')
-plt.title('Energies of the triplet subspace')
+plt.title('Energy of the triplet')
+plt.show()
+
+# we plot the differences of succesive eigenstate's energies
+plt.figure()
+plt.plot(J34zero-2*np.linspace(J78ini, J78fin, number_iterations), np.transpose(energy_tracker)[1,:] - np.transpose(energy_tracker)[0,:], label ='second - first')
+plt.plot(J34zero-2*np.linspace(J78ini, J78fin, number_iterations), np.transpose(energy_tracker)[2,:] - np.transpose(energy_tracker)[1,:], label ='third - second')
+plt.legend()
+plt.xlabel('$J_{34} - J_{78}$ ($E_0$)')
+plt.ylabel('energy ($E_0$)')
+plt.title('Differences of energy of the triplet')
 plt.show()
 
 # finally we colour plot the expect_tracker matrix data array and the amplitude_tracker for the fourier transform
 x = t
-y = np.linspace(J23ini, J23fin, number_iterations)
+y = np.linspace(J34zero-2*J78ini, J34zero-2*J78fin, number_iterations)
 plt.pcolormesh(x, y, expect_tracker)
-plt.title('Oscillations in the triplet subspace')
+plt.title('Oscillations for the quintuplet subspace')
 plt.xlabel('time ($t_0$)')
-plt.ylabel('$J_{23}$ ($E_0$)')
+plt.ylabel('$J_{34} - J_{78}$ ($E_0$)')
 plt.colorbar()
 plt.show()
 
 # to plot the whole frequency spectrum (with negative ones)
 x = sample_freq
-y = np.linspace(J23ini, J23fin, number_iterations)
-plt.pcolormesh(x[:80], y, amplitude_tracker[:,:80])
-plt.title('Fourier transform of the oscillations in the triplet subspace')
+y = np.linspace(J34zero-2*J78ini, J34zero-2*J78fin, number_iterations)
+plt.pcolormesh(x[:50], y, amplitude_tracker[:,:50])
+plt.title('Fourier transfom of the oscillations')
 plt.xlabel('frequency ($f_0$)')
-plt.ylabel('$J_{23}$ ($E_0$)')
+plt.ylabel('$J_{34} - J_{78}$ ($E_0$)')
 plt.colorbar()
 plt.show()
