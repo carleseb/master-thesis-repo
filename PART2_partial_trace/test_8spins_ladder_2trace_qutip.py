@@ -24,6 +24,10 @@ Tminus = basis(4,3)
 S13T24 = (basis(16,7) - basis(16,13)).unit()
 T13S24 = (basis(16,11) - basis(16,14)).unit()
 
+spins = 8
+B = 0.5
+trans_matrix = coupled_matrix_gen(spins)
+
 # Intitial state
 ket0 = tensor(S13T24, Tminus, Tminus)
 ket0_t = basis_transformation(ket0, trans_matrix)
