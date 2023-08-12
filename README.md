@@ -1,6 +1,7 @@
 # master-thesis-repo
 
-This is the repository for the code used in my master thesis. You can find the manuscript in this repo: Thesis_Carles_Esteve.pdf
+This is the repository for the code used in my master thesis. You can find the manuscript in this repo: Thesis_Carles_Esteve.pdf.
+
 If you wish to run any simulation, most of the code requires having DM solver installed (see https://github.com/stephanlphilips/DM_solver)
 
 There is an introductory example on how to use the developped code in the folder 'START'
